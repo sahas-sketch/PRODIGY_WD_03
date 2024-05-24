@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: url('https://source.unsplash.com/1600x900/?abstract,gradient') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 3em;
+            color: #fff;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            border: 5px solid #fff;
+        }
+
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell:hover {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .cell.x:before,
+        .cell.o:before {
+            content: "";
+            display: block;
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+
+        .cell.x:before {
+            background: linear-gradient(45deg, transparent 47%, #ff6347 47%, #ff6347 53%, transparent 53%),
+                        linear-gradient(-45deg, transparent 47%, #ff6347 47%, #ff6347 53%, transparent 53%);
+        }
+
+        .cell.o:before {
+            background: radial-gradient(circle, transparent 40%, #4682b4 40%, #4682b4 60%, transparent 60%);
+        }
+
+        #restart {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 1.2em;
+            color: #007BFF;
+            background-color: #fff;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        #restart:hover {
+            background-color: #007BFF;
+            color: #fff;
+            border-color: #0056b3;
+        }
+
+        #restart:active {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+        #result-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+        }
+
+        #result-message {
+            color: #fff;
+            font-size: 2em;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        #result-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #007BFF;
+            background-color: #fff;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        #result-button:hover {
+            background-color: #007BFF;
+            color: #fff;
+            border-color: #0056b3;
+        }
+
+        #result-button:active {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <div id="game-board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+        <div id="result-overlay">
+            <div id="result-message">
+                <span id="result-text"></span>
+                <br>
+                <button id="result-button">Play Again</button>
+            </div>
+        </div>
+    </div>
+    <button id="restart">Restart Game</button>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const cells = document.querySelectorAll(".cell");
+            const restartButton = document.getElementById("restart");
+            const resultOverlay = document.getElementById("result-overlay");
+            const resultText = document.getElementById("result-text");
+            const resultButton = document.getElementById("result-button");
+            let currentPlayer = "X";
+            let board = ["", "", "", "", "", "", "", "", ""];
+
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            function handleClick(event) {
+                const cell = event.target;
+                const index = cell.dataset.index;
+
+                if (board[index] === "") {
+                    board[index] = currentPlayer;
+                    cell.classList.add(currentPlayer.toLowerCase());
+                    if (checkWin()) {
+                        showResult(`${currentPlayer} wins!`);
+                    } else if (board.every(cell => cell !== "")) {
+                        showResult("It's a draw!");
+                    } else {
+                        currentPlayer = currentPlayer === "X" ? "O" : "X";
+                    }
+                }
+            }
+
+            function checkWin() {
+                return winningCombinations.some(combination => {
+                    return combination.every(index => {
+                        return board[index] === currentPlayer;
+                    });
+                });
+            }
+
+            function resetBoard() {
+                board = ["", "", "", "", "", "", "", "", ""];
+                cells.forEach(cell => {
+                    cell.classList.remove("x", "o");
+                });
+                currentPlayer = "X";
+                resultOverlay.style.display = "none";
+            }
+
+            function showResult(message) {
+                resultText.textContent = message;
+                resultOverlay.style.display = "flex";
+            }
+
+            cells.forEach(cell => {
+                cell.addEventListener("click", handleClick);
+            });
+
+            restartButton.addEventListener("click", resetBoard);
+            resultButton.addEventListener("click", resetBoard);
+        });
+    </script>
+</body>
+</html>
